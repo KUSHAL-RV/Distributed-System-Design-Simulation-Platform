@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package simulation;
+
+option go_package = "livesysdesign/sim-engine/api/proto";
+
+service SimulationService {
+  rpc StartSimulation (StartRequest) returns (StartResponse);
+  rpc StopSimulation (StopRequest) returns (StopResponse);
+  rpc InjectFailure (InjectFailureRequest) returns (InjectFailureResponse);
+  rpc RemoveFailure (RemoveFailureRequest) returns (RemoveFailureResponse);
+}
+
+message StartRequest {
+  string simulation_id = 1;
+  string design_id = 2;
+  // JSON stringified graph data from the frontend
+  string graph_json = 3;
+}
+
+message StartResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message StopRequest {
+  string simulation_id = 1;
+}
+
+message StopResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message InjectFailureRequest {
+  string simulation_id = 1;
+  string node_id = 2;
+  // Options: "KILL", "SLOW", "DROP", "PARTITION"
+  string failure_type = 3;
+}
+
+message InjectFailureResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message RemoveFailureRequest {
+  string simulation_id = 1;
+  string node_id = 2;
+}
+
+message RemoveFailureResponse {
+  bool success = 1;
+  string message = 2;
+}

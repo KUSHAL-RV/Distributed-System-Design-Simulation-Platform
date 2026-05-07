@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  designs   Design[]
+
+  @@map("users")
+}
+
+model Design {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  userId      String       @map("user_id")
+  nodes       Json         @default("[]")
+  edges       Json         @default("[]")
+  isPublic    Boolean      @default(false) @map("is_public")
+  shareSlug   String?      @unique @map("share_slug")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  simulations Simulation[]
+
+  @@index([userId])
+  @@map("designs")
+}
+
+model Simulation {
+  id        String    @id @default(cuid())
+  designId  String    @map("design_id")
+  status    SimStatus @default(PENDING)
+  config    Json
+  startedAt DateTime? @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  metrics   Metric[]
+  design    Design    @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  @@index([designId])
+  @@index([status])
+  @@map("simulations")
+}
+
+model Metric {
+  id           String     @id @default(cuid())
+  simulationId String     @map("simulation_id")
+  nodeId       String     @map("node_id")
+  timestamp    DateTime   @default(now())
+  latencyP50   Float      @map("latency_p50")
+  latencyP95   Float      @map("latency_p95")
+  latencyP99   Float      @map("latency_p99")
+  throughput   Float
+  errorRate    Float      @map("error_rate")
+  queueDepth   Int        @map("queue_depth")
+  simulation   Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+
+  @@index([simulationId, timestamp])
+  @@index([simulationId, nodeId])
+  @@map("metrics")
+}
+
+model SimulationMetric {
+  id           String   @default(cuid())
+  simulationId String   @map("simulation_id")
+  nodeId       String   @map("node_id")
+  timestamp    DateTime @db.Timestamptz(6)
+  latency      Int
+  success      Boolean
+  statusCode   Int      @map("status_code")
+
+  @@id([id, timestamp])
+  @@index([simulationId, timestamp(sort: Desc)])
+  @@index([simulationId, nodeId])
+  @@map("simulation_metrics")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SimStatus {
+  PENDING
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+}

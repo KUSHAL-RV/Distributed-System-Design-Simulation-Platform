@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+:root {
+  --background: #030712;
+  --foreground: #f9fafb;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* ─── Custom Scrollbar ────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── React Flow Overrides ────────────────────── */
+.react-flow__node {
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.react-flow__edge-path {
+  stroke-width: 2px;
+}
+
+.react-flow__handle {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.react-flow__node:hover .react-flow__handle {
+  opacity: 1;
+}
+
+/* ─── Animations ──────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.6); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+/* Staggered animation delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* ─── Simulation Pulse ────────────────────────── */
+@keyframes pulse-healthy {
+  0%, 100% { box-shadow: 0 0 10px 0px rgba(16, 185, 129, 0.3); border-color: rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 0 20px 5px rgba(16, 185, 129, 0.7); border-color: rgba(16, 185, 129, 1); }
+}
+@keyframes pulse-warning {
+  0%, 100% { box-shadow: 0 0 10px 0px rgba(245, 158, 11, 0.4); border-color: rgba(245, 158, 11, 0.6); }
+  50% { box-shadow: 0 0 25px 5px rgba(245, 158, 11, 0.8); border-color: rgba(245, 158, 11, 1); }
+}
+@keyframes pulse-critical {
+  0%, 100% { box-shadow: 0 0 10px 0px rgba(239, 68, 68, 0.5); border-color: rgba(239, 68, 68, 0.7); }
+  50% { box-shadow: 0 0 25px 5px rgba(239, 68, 68, 0.9); border-color: rgba(239, 68, 68, 1); }
+}
+
+.sim-pulse-healthy { animation: pulse-healthy 2s ease-in-out infinite; }
+.sim-pulse-warning { animation: pulse-warning 1.5s ease-in-out infinite; }
+.sim-pulse-critical { animation: pulse-critical 0.8s ease-in-out infinite; }

@@ -1,0 +1,112 @@
+version: '3.9'
+
+services:
+  # ─── PostgreSQL 16 (TimescaleDB) ────────────────
+  postgres:
+    image: timescale/timescaledb-ha:pg16
+    container_name: livesys-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: livesys
+      POSTGRES_PASSWORD: livesys_secret_2024
+      POSTGRES_DB: livesysdesign
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U livesys -d livesysdesign"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - livesys-net
+
+  # ─── Redis 7 ────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: livesys-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - livesys-net
+
+  # ─── Zookeeper ──────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: livesys-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "ruok,stat,conf"
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=ruok"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - livesys-net
+
+  # ─── Apache Kafka ───────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: livesys-kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 20s
+      timeout: 15s
+      retries: 5
+    networks:
+      - livesys-net
+
+  # ─── Kafka UI (Dev only) ────────────────────────
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: livesys-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: livesys-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - livesys-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  zookeeper_data:
+
+networks:
+  livesys-net:
+    driver: bridge
